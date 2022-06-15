@@ -17,52 +17,26 @@ module "aws_transit" {
   instance_size                 = "c5n.4xlarge"
   insane_mode                   = true
   local_as_number               = var.avx_asn
-  bgp_ecmp                      = true
+#  bgp_ecmp                      = true
 }
 
-locals {
-  rtbs = {
-    one = module.aws_transit.vpc.route_tables[0],
-    two = module.aws_transit.vpc.route_tables[1],
-    #three = module.aws_transit.vpc.route_tables[2]
-  }
-}
-
-resource "aws_route" "route1" {
-  #for_each               =  toset(module.aws_transit.vpc.route_tables)
-  #count = length(module.aws_transit.vpc.route_tables)
-  for_each               = { for i, val in local.rtbs : i => val }
-  route_table_id         = each.value #module.aws_transit.vpc.route_tables[count.index] #module.aws_transit.vpc.route_tables[0]
-  destination_cidr_block = var.tgw_cidr
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
+data "aviatrix_vpc" "aws_transit" {
+  name                = module.aws_transit.vpc.name
+  route_tables_filter = "public"
   depends_on = [
-    module.aws_transit,
-    aws_ec2_transit_gateway.main,
-    aviatrix_transit_external_device_conn.conn1
+    module.aws_transit
   ]
 }
 
-/* resource "aws_route" "route2" {
-  route_table_id         = module.aws_transit.vpc.route_tables[1]
+resource "aws_route" "TrGW_route_to_TGW" {
+  route_table_id         = data.aviatrix_vpc.aws_transit.route_tables[0]
   destination_cidr_block = "10.119.0.0/16"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
   depends_on = [
     module.aws_transit,
-    aws_ec2_transit_gateway.main,
-    aviatrix_transit_external_device_conn.conn1
+    aws_ec2_transit_gateway.main
   ]
 }
-
-resource "aws_route" "route3" {
-  route_table_id         = module.aws_transit.vpc.route_tables[2]
-  destination_cidr_block = "10.119.0.0/16"
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
-  depends_on = [
-    module.aws_transit,
-    aws_ec2_transit_gateway.main,
-    aviatrix_transit_external_device_conn.conn1
-  ]
-} */
 
 
 resource "aviatrix_transit_external_device_conn" "conn1" {
@@ -83,7 +57,7 @@ resource "aviatrix_transit_external_device_conn" "conn1" {
   backup_remote_tunnel_cidr = "${cidrhost(var.tunnel_cidr1, 3)}/29,${cidrhost(var.tunnel_cidr2, 3)}/29" 
 }
 
-resource "aviatrix_transit_external_device_conn" "conn2" {
+/* resource "aviatrix_transit_external_device_conn" "conn2" {
   vpc_id                    = module.aws_transit.transit_gateway.vpc_id
   connection_name           = "${var.env_name}-avx-to-tgw-2"
   gw_name                   = module.aws_transit.transit_gateway.gw_name
@@ -99,35 +73,7 @@ resource "aviatrix_transit_external_device_conn" "conn2" {
   remote_tunnel_cidr        = "${cidrhost(var.tunnel_cidr3, 2)}/29,${cidrhost(var.tunnel_cidr4, 2)}/29" 
   backup_local_tunnel_cidr  = "${cidrhost(var.tunnel_cidr3, 4)}/29,${cidrhost(var.tunnel_cidr4, 1)}/29" 
   backup_remote_tunnel_cidr = "${cidrhost(var.tunnel_cidr3, 3)}/29,${cidrhost(var.tunnel_cidr4, 3)}/29" 
-}
-
-/* resource "aviatrix_transit_external_device_conn" "conn1" {
-  vpc_id             = module.aws_transit.transit_gateway.vpc_id
-  connection_name    = "avx-to-tgw1"
-  gw_name            = module.aws_transit.transit_gateway.gw_name
-  connection_type    = "bgp"
-  tunnel_protocol    = "GRE"
-  remote_gateway_ip  = "${aws_ec2_transit_gateway_connect_peer.main.transit_gateway_address},1.1.1.1"
-  bgp_local_as_num   = "65101"
-  bgp_remote_as_num  = "64513"
-  local_tunnel_cidr  = "169.254.50.1/29,169.254.50.4/29"
-  remote_tunnel_cidr = "169.254.50.2/29,169.254.50.3/29"
-}
-
-resource "aviatrix_transit_external_device_conn" "conn2" {
-  vpc_id             = module.aws_transit.transit_gateway.vpc_id
-  connection_name    = "avx-to-tgw2"
-  gw_name            = module.aws_transit.transit_gateway.gw_name
-  connection_type    = "bgp"
-  tunnel_protocol    = "GRE"
-  remote_gateway_ip  = "1.1.1.2,${aws_ec2_transit_gateway_connect_peer.secondary.transit_gateway_address}"
-  bgp_local_as_num   = "65101"
-  bgp_remote_as_num  = "64513"
-  local_tunnel_cidr  = "169.254.51.4/29,169.254.51.1/29"
-  remote_tunnel_cidr = "169.254.51.2/29,169.254.51.3/29"
 } */
-
-
 
 module "spoke1" {
   source  = "terraform-aviatrix-modules/mc-spoke/aviatrix"

@@ -83,7 +83,7 @@ resource "aws_ec2_transit_gateway_connect_peer" "peer1" {
   }
 }
 
-resource "aws_ec2_transit_gateway_connect_peer" "peer2" {
+/* resource "aws_ec2_transit_gateway_connect_peer" "peer2" {
   peer_address = module.aws_transit.transit_gateway.ha_private_ip
   bgp_asn      = var.avx_asn
   inside_cidr_blocks            = [var.tunnel_cidr2]
@@ -91,7 +91,7 @@ resource "aws_ec2_transit_gateway_connect_peer" "peer2" {
   tags = {
     "Name" = "${var.env_name}-tgw-connect-peer2"
   }
-}
+} */
 
 ## Testing additional tunnels
 
