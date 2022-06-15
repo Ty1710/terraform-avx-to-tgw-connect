@@ -210,6 +210,7 @@ module "azure1" {
   vnet    = module.azure_spoke1.vpc.name
   subnet  = module.azure_spoke1.vpc.public_subnets[0].subnet_id
   ssh_key = var.ssh_key
+  instance_size = "Standard_D5_v2"
   cloud_init_data = templatefile("${path.module}/cloud-init.tpl",
     {
       name  = "int3",
@@ -245,6 +246,7 @@ module "azure2" {
   vnet    = module.azure_spoke1.vpc.name
   subnet  = module.azure_spoke1.vpc.public_subnets[1].subnet_id
   ssh_key = var.ssh_key
+  instance_size = "Standard_D5_v2"
   cloud_init_data = templatefile("${path.module}/cloud-init.tpl",
     {
       name  = "int4",
